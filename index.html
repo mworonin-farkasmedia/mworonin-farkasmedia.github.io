@@ -1,1 +1,461 @@
-Test
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PBN – przegląd danych</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg: radial-gradient(120% 120% at 20% 20%, rgba(255,115,29,0.18), rgba(83,56,255,0.12)), #0b0c1a;
+      --card: rgba(255, 255, 255, 0.07);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f4ff;
+      --muted: #c3c2d6;
+      --accent: #c084fc;
+      --accent-strong: #ff8b3d;
+      --shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.5px; }
+    h2 { margin: 24px 0 12px; font-size: 18px; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    select, input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 14px;
+      background: rgba(19, 19, 37, 0.7);
+      color: var(--text);
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      appearance: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,0.35);
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent-strong);
+      background: rgba(35, 24, 66, 0.9);
+      box-shadow: 0 0 0 2px rgba(255, 139, 61, 0.35), 0 12px 32px rgba(0,0,0,0.45);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .meta-label {
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 11px;
+    }
+    .meta-value {
+      color: var(--accent-strong);
+      font-weight: 600;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 420px;
+      overflow: auto;
+    }
+    .list li {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: rgba(255,255,255,0.04);
+    }
+    .list a { color: var(--accent-strong); text-decoration: none; }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .section-title { margin: 0 0 8px; font-size: 16px; }
+    .stack { display: flex; flex-direction: column; gap: 8px; }
+    .md-preview {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,0.04);
+      max-height: 420px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .md-preview h3, .md-preview h4 {
+      margin: 0 0 6px;
+      font-weight: 700;
+      color: var(--accent-strong);
+      display: inline-block;
+    }
+    .md-preview ul {
+      padding-left: 18px;
+      margin: 6px 0;
+    }
+    .md-preview li {
+      margin: 4px 0;
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PBN – przegląd repozytorium</h1>
+    <p>Wybierz domenę, sprawdź konfigurację, archiwalne wpisy i proponowane tematy blogowe.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="card">
+      <label for="domainSelect">Wybierz domenę</label>
+      <select id="domainSelect"></select>
+      <p class="status" id="configStatus">Załaduj konfigurację i listy po wyborze domeny.</p>
+      <div class="stack">
+        <div>
+          <div class="section-title">Konfiguracja domeny</div>
+          <div id="configPreview" class="md-preview">–</div>
+        </div>
+        <div>
+          <div class="section-title">Źródła danych</div>
+          <div id="sourceInfo" class="md-preview"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="stack">
+      <section class="card">
+        <div class="section-title">Archiwalne tematy (z `post-data/`)</div>
+        <p class="status">Lista generowana z katalogu domeny. Jeśli serwer nie udostępnia listingów, dodaj plik manifestu `post-data/&lt;domena&gt;-index.json` z tablicą ścieżek do plików `.md`.</p>
+        <div class="stack">
+          <input id="archiveFilter" type="search" placeholder="Filtruj po tytule/slug..." />
+          <ul id="archiveList" class="list"></ul>
+          <div class="status" id="archiveStatus"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Zaproponowane tematy (z `topic-suggestions/`)</div>
+        <div class="stack">
+          <ul id="suggestionList" class="list"></ul>
+          <div class="status" id="suggestionStatus"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const domains = [
+      {
+        id: '3_info_pl',
+        label: '3.info.pl',
+        configPath: 'configuration/3_info_pl.conf',
+        postsDir: 'post-data/3_info_pl/',
+        manifest: 'post-data/3_info_pl-index.json',
+        topicSuggestions: 'topic-suggestions/topics-3_info_pl.md'
+      },
+      {
+        id: 'a_biz_pl',
+        label: 'a.biz.pl',
+        configPath: 'configuration/a_biz_pl.conf',
+        postsDir: 'post-data/a_biz_pl/',
+        manifest: 'post-data/a_biz_pl-index.json',
+        topicSuggestions: 'topic-suggestions/topics-a_biz_pl.md'
+      },
+      {
+        id: 'abcpodatki_pl',
+        label: 'abcpodatki.pl',
+        configPath: 'configuration/abcpodatki_pl.conf',
+        postsDir: 'post-data/abcpodatki_pl/',
+        manifest: 'post-data/abcpodatki_pl-index.json',
+        topicSuggestions: 'topic-suggestions/topics-abcpodatki_pl.md'
+      }
+    ];
+
+    const els = {
+      select: document.getElementById('domainSelect'),
+      configStatus: document.getElementById('configStatus'),
+      configPreview: document.getElementById('configPreview'),
+      sourceInfo: document.getElementById('sourceInfo'),
+      archiveList: document.getElementById('archiveList'),
+      archiveStatus: document.getElementById('archiveStatus'),
+      archiveFilter: document.getElementById('archiveFilter'),
+      suggestionList: document.getElementById('suggestionList'),
+      suggestionStatus: document.getElementById('suggestionStatus')
+    };
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function markdownToHtml(md) {
+      const lines = md.split(/\r?\n/);
+      let html = '';
+      let inList = false;
+      const flushList = () => {
+        if (inList) {
+          html += '</ul>';
+          inList = false;
+        }
+      };
+      for (const raw of lines) {
+        const line = raw.trimEnd();
+        if (!line.trim()) {
+          flushList();
+          continue;
+        }
+        if (line.startsWith('# ')) {
+          flushList();
+          html += `<h3>${escapeHtml(line.replace(/^#\s*/, ''))}</h3>`;
+          continue;
+        }
+        if (line.startsWith('## ')) {
+          flushList();
+          html += `<h4>${escapeHtml(line.replace(/^##\s*/, ''))}</h4>`;
+          continue;
+        }
+        if (line.startsWith('- ')) {
+          if (!inList) {
+            html += '<ul>';
+            inList = true;
+          }
+          html += `<li>${escapeHtml(line.replace(/^- /, ''))}</li>`;
+          continue;
+        }
+        flushList();
+        html += `<p>${escapeHtml(line)}</p>`;
+      }
+      flushList();
+      return html || '<p>(pusto)</p>';
+    }
+
+    function initSelect() {
+      domains.forEach((d, idx) => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.label;
+        if (idx === 0) opt.selected = true;
+        els.select.appendChild(opt);
+      });
+      els.select.addEventListener('change', () => loadDomain(els.select.value));
+      els.archiveFilter.addEventListener('input', () => filterArchive());
+      loadDomain(domains[0].id);
+    }
+
+    function humanizeSlug(slug) {
+      return slug
+        .replace(/[-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, m => m.toUpperCase());
+    }
+
+    async function fetchText(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`Brak dostępu do ${path} (${res.status})`);
+      return res.text();
+    }
+
+    function renderList(container, items) {
+      container.innerHTML = '';
+      items.forEach(item => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = item.href;
+        a.textContent = item.title;
+        a.target = '_blank';
+        li.appendChild(a);
+        if (item.meta) {
+          const meta = document.createElement('div');
+          meta.className = 'status';
+          meta.textContent = item.meta;
+          li.appendChild(meta);
+        }
+        container.appendChild(li);
+      });
+    }
+
+    function setStatus(el, msg) {
+      el.textContent = msg;
+    }
+
+    async function loadConfig(domain) {
+      setStatus(els.configStatus, 'Ładowanie konfiguracji...');
+      try {
+        const text = await fetchText(domain.configPath);
+        els.configPreview.innerHTML = markdownToHtml(text.trim());
+        setStatus(els.configStatus, 'Załadowano konfigurację.');
+        const metaRows = [
+          { label: 'config', value: domain.configPath },
+          { label: 'post-data', value: domain.postsDir },
+          { label: 'manifest', value: domain.manifest },
+          { label: 'topics', value: domain.topicSuggestions || '(brak pliku)' }
+        ];
+        els.sourceInfo.innerHTML = `<div class="meta">${metaRows.map(r => `
+          <div class="meta-row">
+            <span class="meta-label">${escapeHtml(r.label)}</span>
+            <span class="meta-value">${escapeHtml(r.value)}</span>
+          </div>`).join('')}</div>`;
+      } catch (err) {
+        setStatus(els.configStatus, err.message);
+        els.configPreview.textContent = 'Brak konfiguracji lub błąd odczytu.';
+      }
+    }
+
+    async function loadArchive(domain) {
+      setStatus(els.archiveStatus, 'Ładowanie listy archiwum...');
+      els.archiveList.innerHTML = '';
+      let files = [];
+
+      // 1) Spróbuj manifestu JSON jeśli istnieje
+      try {
+        const res = await fetch(domain.manifest);
+        if (res.ok) {
+          const data = await res.json();
+          files = Array.isArray(data) ? data : [];
+        }
+      } catch (_) {}
+
+      // 2) Jeśli brak manifestu, spróbuj sparsować listing katalogu
+      if (!files.length) {
+        try {
+          const html = await fetchText(domain.postsDir);
+          const links = Array.from(new DOMParser().parseFromString(html, 'text/html').querySelectorAll('a'));
+          files = links
+            .map(a => a.getAttribute('href') || '')
+            .filter(href => href.toLowerCase().endsWith('.md'))
+            .map(href => ({ path: domain.postsDir + href }));
+        } catch (_) {
+          // ignore – będzie fallback
+        }
+      }
+
+      if (!files.length) {
+        setStatus(els.archiveStatus, 'Brak listingu. Dodaj manifest `post-data/<domena>-index.json` lub udostępnij listing katalogu.');
+        return;
+      }
+
+      const normalize = file => {
+        if (typeof file === 'string') {
+          return { path: file, title: null };
+        }
+        return { path: file.path || file.href || '', title: file.title || null };
+      };
+
+      const items = files
+        .map(normalize)
+        .filter(item => item.path)
+        .map(item => ({
+          href: item.path,
+          title: item.title ? item.title : humanizeSlug(item.path.split('/').pop().replace(/\.md$/, '')),
+          meta: item.path
+        }));
+
+      els.archiveList.dataset.items = JSON.stringify(items);
+      renderList(els.archiveList, items);
+      setStatus(els.archiveStatus, `Ładowanie zakończone. Dostępnych wpisów: ${items.length}.`);
+    }
+
+    function filterArchive() {
+      const raw = els.archiveList.dataset.items;
+      if (!raw) return;
+      const items = JSON.parse(raw);
+      const q = els.archiveFilter.value.toLowerCase().trim();
+      const filtered = q
+        ? items.filter(i => i.title.toLowerCase().includes(q) || i.meta.toLowerCase().includes(q))
+        : items;
+      renderList(els.archiveList, filtered);
+      setStatus(els.archiveStatus, `Widocznych: ${filtered.length} / ${items.length}`);
+    }
+
+    async function loadSuggestions(domain) {
+      els.suggestionList.innerHTML = '';
+      setStatus(els.suggestionStatus, 'Ładowanie tematów...');
+      if (!domain.topicSuggestions) {
+        setStatus(els.suggestionStatus, 'Brak pliku `topic-suggestions` dla tej domeny.');
+        return;
+      }
+      try {
+        const text = await fetchText(domain.topicSuggestions);
+        // proste wyciąganie linii tematycznych
+        const lines = text.split(/\r?\n/);
+        const topics = lines
+          .filter(l => l.trim().startsWith('- '))
+          .map(l => {
+            const raw = l.replace(/^- /, '').trim();
+            const m = raw.match(/^(\d{4}-\d{2}-\d{2})\s*[–-]\s*(.+)$/);
+            return m ? { title: m[2].trim(), date: m[1] } : { title: raw, date: null };
+          });
+        const items = topics.map(t => ({
+          href: '#',
+          title: t.title,
+          meta: t.date ? `Publikacja: ${t.date}` : domain.topicSuggestions
+        }));
+        renderList(els.suggestionList, items);
+        setStatus(els.suggestionStatus, `Załadowano ${items.length} tematów.`);
+      } catch (err) {
+        setStatus(els.suggestionStatus, err.message);
+      }
+    }
+
+    async function loadDomain(id) {
+      const domain = domains.find(d => d.id === id);
+      if (!domain) return;
+      await loadConfig(domain);
+      await loadArchive(domain);
+      await loadSuggestions(domain);
+      els.archiveFilter.value = '';
+    }
+
+    initSelect();
+  </script>
+</body>
+</html>
+
